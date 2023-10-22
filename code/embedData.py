@@ -6,9 +6,13 @@ import logging
 from pathlib import Path
 # Third-party packages
 import pandas as pd
+import tensorflow_hub as hub  # need to install with anaconda using next repodata. Allow the current repodata to fail. The Python version has to be 3.8. I.e:
+# conda create -n tfenv python=3.8 tensorflow
+# Maybe try:
+# conda create -n tfenv python=3.8 tensorflow tensorflow_hub
+# Maybe also try:
+# conda create -n tfenv python=3.8 tensorflow tensorflow_hub package1 package2 etc
 import warnings
-from gensim.models import Word2Vec
-from nltk.tokenize import sent_tokenize, word_tokenize
 # Local packages
 from drapi.drapi import getTimestamp, successiveParents, makeDirPath
 
@@ -95,6 +99,7 @@ if __name__ == "__main__":
     warnings.filterwarnings(action='ignore')
 
     data = pd.read_csv(DATA_PATH, index_col=0)
+    embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder-multilingual/3")
     sentences = {"Character": [],
                  "Interests": [],
                  "Her Type of Man": []}
@@ -107,24 +112,8 @@ if __name__ == "__main__":
                 text = ""
             else:
                 pass
-            for i in sent_tokenize(text):
-                temp = []
 
-                for j in word_tokenize(i):
-                    temp.append(j.lower())
-
-            sentences[textTitle].append(temp)
-
-    # Create model
-    model1a = Word2Vec(sentences=sentences["Character"],
-                       min_count=1,
-                       vector_size=100,
-                       window=5)
-    model2a = Word2Vec(sentences=sentences["Character"],
-                       min_count=1,
-                       vector_size=100,
-                       window=5,
-                       sg=1)
+            sentences[textTitle] = embed(text)
     
     # TODO
     # Find similarties

@@ -6,12 +6,8 @@ import logging
 from pathlib import Path
 # Third-party packages
 import pandas as pd
-import tensorflow_hub as hub  # need to install with anaconda using next repodata. Allow the current repodata to fail. The Python version has to be 3.8. I.e:
-# conda create -n tfenv python=3.8 tensorflow
-# Maybe try:
-# conda create -n tfenv python=3.8 tensorflow tensorflow_hub
-# Maybe also try:
-# conda create -n tfenv python=3.8 tensorflow tensorflow_hub package1 package2 etc
+import tensorflow_text as tftext
+import tensorflow_hub as hub
 import warnings
 # Local packages
 from drapi.drapi import getTimestamp, successiveParents, makeDirPath
@@ -99,12 +95,12 @@ if __name__ == "__main__":
     warnings.filterwarnings(action='ignore')
 
     data = pd.read_csv(DATA_PATH, index_col=0)
+    _ = tftext
     embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder-multilingual/3")
-    sentences = {"Character": [],
-                 "Interests": [],
-                 "Her Type of Man": []}
+    embeddings = {}
     lendata = len(data)
     for it, (profileID, row) in enumerate(data.iterrows(), start=1):
+        embeddedProfile = {}
         if it % 100 == 0:
             logger.info(f"""Working on profile {it:,} of {lendata:,}.""")
         for textTitle, text in row.items():
@@ -112,8 +108,8 @@ if __name__ == "__main__":
                 text = ""
             else:
                 pass
-
-            sentences[textTitle] = embed(text)
+            embeddedProfile[textTitle] = embed(text)
+        embeddings[profileID] = embeddedProfile
     
     # TODO
     # Find similarties
@@ -121,21 +117,26 @@ if __name__ == "__main__":
         import numpy as np
         from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
 
-        vectors = [item['vector'] for item in full_data]
-        X = np.array(vectors)
+        X1 = np.array([di["Character"][0] for di in embeddings.values()])
+        X2 = np.array([di["Interests"][0] for di in embeddings.values()])
+        X3 = np.array([di["Her Type of Man"][0] for di in embeddings.values()])
 
         # calculate similarity based on Euclidean distance
-        sim = euclidean_distances(X)
-        indices = np.vstack([np.argsort(-arr) for arr in sim])
+        sim1 = euclidean_distances(X1)
+        indices1 = np.vstack([np.argsort(-arr) for arr in sim1])
 
         # calculate similarity based on cosine distance
-        cos_sim = cosine_similarity(X)
-        cos_indices = np.vstack([np.argsort(-arr) for arr in cos_sim])
+        cos_sim1 = cosine_similarity(X1)
+        cos_indices1 = np.vstack([np.argsort(-arr) for arr in cos_sim1])
 
-        # find most similar books for each case
-        for i, book in enumerate(full_data):
-            book['euclidean'] = indices[i][1:21]
-            book['cosine'] = cos_indices[i][1:21]
+        # find most similar profile for each case
+        # TODO: Need to re-design script so I can link indices to profiles. The original author used a list, so naturally the index would follow the book, but I'm using a dictionary.
+        indices = {}
+        for ladyID, embeddedProfile in embeddings.items():
+            di = {}
+            di['euclidean'] = indices1[i][1:21]
+            di['cosine'] = cos_indices1[i][1:21]
+            indices[ladyID] = di
 
     # End script
     logging.info(f"""Finished running "{thisFilePath.relative_to(projectDir)}".""")

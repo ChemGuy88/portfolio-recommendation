@@ -1,14 +1,16 @@
 """
-Embeds natural language into machine language.
+Embeds natural language into machine language and then finds similarities
 """
 
 import logging
 from pathlib import Path
 # Third-party packages
+import numpy as np
 import pandas as pd
 import tensorflow_text as tftext
 import tensorflow_hub as hub
 import warnings
+from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
 # Local packages
 from drapi.drapi import getTimestamp, successiveParents, makeDirPath
 
@@ -110,33 +112,38 @@ if __name__ == "__main__":
                 pass
             embeddedProfile[textTitle] = embed(text)
         embeddings[profileID] = embeddedProfile
-    
-    # TODO
+
+    # NOTE The structure of `embeddings`
+    # embeddings = {ladyID: {"Character": tf.Tensor,
+    #                        "Interests": tf.Tensor,
+    #                        "Her Type of Man": tf.Tensor}}
+
     # Find similarties
-    if False:
-        import numpy as np
-        from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
+    embeddingsList = []
+    for ladyID, profileDict in embeddings.items():
+        embeddingsList.append((ladyID, profileDict))
+    embeddingsList = sorted(embeddingsList, key=lambda tu: tu[0])
 
-        X1 = np.array([di["Character"][0] for di in embeddings.values()])
-        X2 = np.array([di["Interests"][0] for di in embeddings.values()])
-        X3 = np.array([di["Her Type of Man"][0] for di in embeddings.values()])
+    arr1 = np.array([di["Character"][0] for (_, di) in embeddingsList])
+    arr2 = np.array([di["Interests"][0] for (_, di) in embeddingsList])
+    arr3 = np.array([di["Her Type of Man"][0] for (_, di) in embeddingsList])
 
-        # calculate similarity based on Euclidean distance
-        sim1 = euclidean_distances(X1)
-        indices1 = np.vstack([np.argsort(-arr) for arr in sim1])
+    # Calculate similarity based on Euclidean distance
+    sim1 = euclidean_distances(arr1)
+    indices1 = np.vstack([np.argsort(-arr) for arr in sim1])
 
-        # calculate similarity based on cosine distance
-        cos_sim1 = cosine_similarity(X1)
-        cos_indices1 = np.vstack([np.argsort(-arr) for arr in cos_sim1])
+    # Calculate similarity based on cosine distance
+    cos_sim1 = cosine_similarity(arr1)
+    cos_indices1 = np.vstack([np.argsort(-arr) for arr in cos_sim1])
 
-        # find most similar profile for each case
-        # TODO: Need to re-design script so I can link indices to profiles. The original author used a list, so naturally the index would follow the book, but I'm using a dictionary.
-        indices = {}
-        for ladyID, embeddedProfile in embeddings.items():
-            di = {}
-            di['euclidean'] = indices1[i][1:21]
-            di['cosine'] = cos_indices1[i][1:21]
-            indices[ladyID] = di
+    # Find most similar profile for each case
+    indices = {}
+    for idx, (ladyID, embeddedProfile) in enumerate(embeddingsList):
+        di = {}
+        di['euclidean'] = indices1[idx][1:21]
+        di['cosine'] = cos_indices1[idx][1:21]
+        indices[ladyID] = di
+    indices = pd.DataFrame.from_dict(indices, orient="index").sort_index()
 
     # End script
     logging.info(f"""Finished running "{thisFilePath.relative_to(projectDir)}".""")

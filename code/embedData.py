@@ -2,7 +2,9 @@
 Embeds natural language into machine language and then finds similarities
 """
 
+import json
 import logging
+import pickle
 from pathlib import Path
 # Third-party packages
 import numpy as np
@@ -119,31 +121,60 @@ if __name__ == "__main__":
     #                        "Her Type of Man": tf.Tensor}}
 
     # Find similarties
+    logger.info("Converting dictionary to ordered list.")
     embeddingsList = []
     for ladyID, profileDict in embeddings.items():
         embeddingsList.append((ladyID, profileDict))
     embeddingsList = sorted(embeddingsList, key=lambda tu: tu[0])
+    logger.info("Converting dictionary to ordered list - done.")
 
-    arr1 = np.array([di["Character"][0] for (_, di) in embeddingsList])
-    arr2 = np.array([di["Interests"][0] for (_, di) in embeddingsList])
-    arr3 = np.array([di["Her Type of Man"][0] for (_, di) in embeddingsList])
+    arrays = {}
+    for profilePart in ["Character", "Interests", "Her Type of Man"]:
+        arrays[profilePart] = np.array([di[profilePart][0] for (_, di) in embeddingsList])
 
     # Calculate similarity based on Euclidean distance
-    sim1 = euclidean_distances(arr1)
-    indices1 = np.vstack([np.argsort(-arr) for arr in sim1])
+    logger.info("Calculating similarity - Euclidean distance.")
+    simEu = {}
+    indicesEu = {}
+    for profilePart in ["Character", "Interests", "Her Type of Man"]:
+        sim = euclidean_distances(arrays[profilePart])
+        simEu[profilePart] = sim
+        indicesEu[profilePart] = np.vstack([np.argsort(-arr) for arr in sim])
+    logger.info("Calculating similarity - Euclidean distance - done.")
 
     # Calculate similarity based on cosine distance
-    cos_sim1 = cosine_similarity(arr1)
-    cos_indices1 = np.vstack([np.argsort(-arr) for arr in cos_sim1])
+    logger.info("Calculating similarity - Cosine distance.")
+    simCos = {}
+    indicesCos = {}
+    for profilePart in ["Character", "Interests", "Her Type of Man"]:
+        sim = cosine_similarity(arrays[profilePart])
+        simCos[profilePart] = sim
+        indicesCos[profilePart] = np.vstack([np.argsort(-arr) for arr in sim])
+    logger.info("Calculating similarity - Cosine distance - done.")
 
     # Find most similar profile for each case
-    indices = {}
-    for idx, (ladyID, embeddedProfile) in enumerate(embeddingsList):
-        di = {}
-        di['euclidean'] = indices1[idx][1:21]
-        di['cosine'] = cos_indices1[idx][1:21]
-        indices[ladyID] = di
-    indices = pd.DataFrame.from_dict(indices, orient="index").sort_index()
+    logger.info("Finding most similar profiles for each case.")
+    indicesDict = {}
+    for profilePart in ["Character", "Interests", "Her Type of Man"]:
+        indicesDict[profilePart] = {}
+        for idx, (ladyID, embeddedProfile) in enumerate(embeddingsList):
+            di = {}
+            di['euclidean'] = indicesEu[profilePart][idx][1:21].tolist()
+            di['cosine'] = indicesCos[profilePart][idx][1:21].tolist()
+            indicesDict[profilePart][ladyID] = di
+    indices = pd.DataFrame.from_dict(indicesDict).sort_index()
+    logger.info("Finding most similar profiles for each case - done.")
+
+    # Save results
+    logger.info("Saving results.")
+    savepath1 = runOutputDir.joinpath("Indices.pkl")
+    with open(savepath1, "wb") as file:
+        pickle.dump(indicesDict, file)
+
+    savepath2 = runOutputDir.joinpath("Indices.JSON")
+    with open(savepath2, "w") as file:
+        json.dump(indicesDict, file)
+    logger.info("Saving results - done.")
 
     # End script
     logging.info(f"""Finished running "{thisFilePath.relative_to(projectDir)}".""")

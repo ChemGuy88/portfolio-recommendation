@@ -28,22 +28,28 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <input type="submit" class="btn btn-light" value="Recommender"/>
+                    <input type="submit" class="btn btn-light" value="Make a Recommendation"/>
                 </form>
             </div>
             <div class="col-6">
                 {% if selectedLadyData is defined %}
                 <h2>Lady Chosen:</h2>
-                <img src="{{ selectedLadyData.image }}">
+                <p>{{ ladyID }}</p>
+                <p>{{ choseProfile }}</p>
                 {% endif %}
             </div>
         </div>
-        {% if similar_lady is defined %}
-        <h2>Voici vos suggestions de lecture:</h2>
+        {% if similarLadies is defined %}
+        <h2>Here are your suggestions:</h2>
         <div class="row">
-            {% for ladyProfile in similar_lady %}
+            {% for ladyProfile in similarLadies %}
             <div class="col-2 p-3 d-flex justify-content-center">
                 <img src="{{ ladyProfile.image }}">
+            </div>
+            {% endfor %}
+            {% for profile in similarProfiles %}
+            <div class="col-2 p-3 d-flex justify-content-center">
+                <p>{{ profile }}</p>
             </div>
             {% endfor %}
         </div>

@@ -19,17 +19,18 @@ data = pd.read_csv("data/output/concatenateData/2023-10-15 19-06-59/Profile Cont
 @app.route("/", methods=['GET', 'POST'])
 def template_test():
     if request.method == 'POST':
-        selected_ladyID = int(request.form.get('selected_ladyID'))
+        selectedLadyID = int(request.form.get('selectedLadyID'))
         selected_metric = request.form.get('selected_metric')
-        # selectedLadyData = next(ladyID for ladyID in indices if ladyID == selected_ladyID)
-        selectedLadyData = indices[selected_ladyID]
+        # selectedLadyData = next(ladyID for ladyID in indices if ladyID == selectedLadyID)
+        selectedLadyData = indices[selectedLadyID]
         similarLadies = [data["Lady ID"][idx] for idx in selectedLadyData[selected_metric]]
         mask = data["Lady ID"].isin(similarLadies)
         similarProfiles = data["Character"][mask]
         return render_template('template.html',
                                list_ladies=list_ladies,
+                               selectedLadyID=selectedLadyID,
                                selectedLadyData=selectedLadyData,
-                               chosenProfile=data['Character'][data["Lady ID"] == selected_ladyID],
+                               chosenProfile=data['Character'][data["Lady ID"] == selectedLadyID],
                                similarLadies=similarLadies[:],
                                similarProfiles=similarProfiles)
     else:

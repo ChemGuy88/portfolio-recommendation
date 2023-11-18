@@ -22,7 +22,7 @@
                     </div>
                     <div class="form-group">
                         <label for="sel1">Choose a Lady</label>
-                        <select class="form-control" id="sel1" name="selected_ladyID">
+                        <select class="form-control" id="sel1" name="selectedLadyID">
                             {% for ladyID in list_ladies %}
                             <option>{{ ladyID }}</option>
                             {% endfor %}
@@ -34,7 +34,7 @@
             <div class="col-6">
                 {% if selectedLadyData is defined %}
                 <h2>Lady Chosen:</h2>
-                <p>{{ ladyID }}</p>
+                <p>{{ selectedLadyID }}</p>
                 <p>{{ choseProfile }}</p>
                 {% endif %}
             </div>

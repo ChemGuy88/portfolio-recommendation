@@ -42,14 +42,10 @@
         {% if similarLadies is defined %}
         <h2>Here are your suggestions:</h2>
         <div class="row">
-            {% for ladyProfile in similarLadies %}
-            <div class="col-2 p-3 d-flex justify-content-center">
-                <img src="{{ ladyProfile.image }}">
-            </div>
-            {% endfor %}
-            {% for profile in similarProfiles %}
-            <div class="col-2 p-3 d-flex justify-content-center">
-                <p>{{ profile }}</p>
+            {% for similarLady, similarProfile in similarData %}
+            <div class="col-2 justify-content-center">
+                <h3>{{similarLady}}</h3>
+                <p>{{ similarProfile }}</p>
             </div>
             {% endfor %}
         </div>

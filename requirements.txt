@@ -2,5 +2,4 @@ flask
 gunicorn
 numpy
 pandas
-pickle
 python==3.8

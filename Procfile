@@ -1,1 +1,1 @@
-web: gunicorn code/flask-web:app
+web: gunicorn code.flask-web:app

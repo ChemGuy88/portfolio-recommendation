@@ -1,1 +1,1 @@
-web: gunicorn code.flaskScript:app
+web: gunicorn --pythonpath code flaskScript:app
